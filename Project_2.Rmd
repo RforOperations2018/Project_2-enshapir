@@ -21,6 +21,39 @@ library(sf)
 library(rgdal)
 library(leaflet)
 library(leaflet.extras)
+
+# #to install pacakgs while working on school computers
+# install.packages(c("shiny", "flexdashboard", "tidyverse", "jsonlite", "plotly", "DT", "shinythemes", "httr", "htmltools", "sf", "rgdal", "leaflet", "leaflet.extras"), dependencies = TRUE)
+
+
+
+```
+
+```{r}
+#API Documentation: https://dev.socrata.com/foundry/data.cityofnewyork.us/qiz3-axqb
+
+#Defining API functions from class
+ckanSQL <- function(url) {
+  # Make the Request
+  r <- RETRY("GET", URLencode(url))
+  # Extract Content
+  c <- content(r, "json")
+  # Basic gsub to make NA's consistent with R
+  json <- gsub('NaN', 'NA', c, perl = TRUE)
+  # Create Dataframe
+  data.frame(jsonlite::fromJSON(json))
+}
+
+# Unique values for Resource Field
+ckanUniques <- function(id, field) {
+  url <- paste0("https://data.wprdc.org/api/action/datastore_search_sql?sql=SELECT%20DISTINCT(%22", field, "%22)%20from%20%22", id, "%22")
+  c(ckanSQL(URLencode(url)))
+}
+
+url <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson"
+test1 <- ckanSQL(url = url)
+
+
 ```
 
 Column {data-width=650}
