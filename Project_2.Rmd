@@ -1,0 +1,49 @@
+---
+title: "Project 2"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(shiny)
+library(flexdashboard)
+library(tidyverse)
+library(jsonlite)
+library(plotly)
+library(DT)
+library(shinythemes)
+library(httr)
+library(htmltools)
+library(sf)
+library(rgdal)
+library(leaflet)
+library(leaflet.extras)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
