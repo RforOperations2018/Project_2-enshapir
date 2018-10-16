@@ -22,6 +22,7 @@ library(rgdal)
 library(leaflet)
 library(leaflet.extras)
 
+
 # #to install pacakgs while working on school computers
 # install.packages(c("shiny", "flexdashboard", "tidyverse", "jsonlite", "plotly", "DT", "shinythemes", "httr", "htmltools", "sf", "rgdal", "leaflet", "leaflet.extras"), dependencies = TRUE)
 
@@ -37,11 +38,11 @@ ckanSQL <- function(url) {
   # Make the Request
   r <- RETRY("GET", URLencode(url))
   # Extract Content
-  c <- content(r, "json")
+  c <- content(r, "text")
   # Basic gsub to make NA's consistent with R
   json <- gsub('NaN', 'NA', c, perl = TRUE)
   # Create Dataframe
-  data.frame(jsonlite::fromJSON(json))
+  readOGR(json)
 }
 
 # Unique values for Resource Field
@@ -51,9 +52,55 @@ ckanUniques <- function(id, field) {
 }
 
 url <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson"
-test1 <- ckanSQL(url = url)
+accidents.load <- ckanSQL(url = url)
 
 
+
+  
+  
+
+
+
+```
+
+Sidebar {.sidebar}
+=====================================
+
+```{r}
+ CrashInput <- reactive({
+    # Race Filter
+    if (length(input$SelectedRace) > 0 ) {
+      RaceAgeGender.server <- subset(RaceAgeGender, Race %in% input$SelectedRace)
+    }
+    
+    return( RaceAgeGender.server)
+  })
+
+selectInput("worldSelect",
+               "Homeworld:",
+               choices = sort(unique(starwars.load$homeworld)),
+               multiple = TRUE,
+               selectize = TRUE,
+               selected = c("Naboo", "Tatooine"))
+   # Birth Selection
+   sliderInput("birthSelect",
+               "Birth Year:",
+               min = min(starwars.load$birth_year, na.rm = T),
+               max = max(starwars.load$birth_year, na.rm = T),
+               value = c(min(starwars.load$birth_year, na.rm = T), max(starwars.load$birth_year, na.rm = T)),
+               step = 1)
+```
+
+
+```{r}
+ swInput <- reactive({
+    # Race Filter
+    if (length(input$SelectedRace) > 0 ) {
+      RaceAgeGender.server <- subset(RaceAgeGender, Race %in% input$SelectedRace)
+    }
+    
+    return( RaceAgeGender.server)
+  })
 ```
 
 Column {data-width=650}
@@ -63,6 +110,10 @@ Column {data-width=650}
 
 ```{r}
 
+
+addHeatmap(lng = ~X, lat = ~Y, radius = 8)
+
+
 ```
 
 Column {data-width=350}
@@ -71,12 +122,19 @@ Column {data-width=350}
 ### Chart B
 
 ```{r}
+value box, nunber of poeple killed to date
+crashes aggregated by hour
+
 
 ```
 
 ### Chart C
 
 ```{r}
+leaflet()%>% 
+  setView(-74.4493175, 29.356908, zoom = 4) %>% #set the view of the map
+  addCircles(data = test1, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), weight = 1, color ='#da0feb')#added the circles over large
 
+ 
 ```
 
