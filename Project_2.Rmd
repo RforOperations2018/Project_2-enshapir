@@ -7,6 +7,9 @@ output:
     vertical_layout: fill
 ---
 
+Sidebar {.sidebar}
+=====================================
+
 ```{r setup, include=FALSE}
 library(shiny)
 library(flexdashboard)
@@ -30,7 +33,7 @@ library(leaflet.extras)
 
 ```
 
-```{r}
+```{r include=FALSE}
 #API Documentation: https://dev.socrata.com/foundry/data.cityofnewyork.us/qiz3-axqb
 
 #Defining API functions from class
@@ -56,43 +59,50 @@ accidents.load <- ckanSQL(url = url)
 
 
 
-  
-  
-
-
-
 ```
 
-Sidebar {.sidebar}
-=====================================
 
 ```{r}
- CrashInput <- reactive({
-    # Race Filter
-    if (length(input$SelectedRace) > 0 ) {
-      RaceAgeGender.server <- subset(RaceAgeGender, Race %in% input$SelectedRace)
-    }
-    
-    return( RaceAgeGender.server)
+output$CarType <- renderUI({
+    selectInput(inputId = "carType1",
+                   label = "1. Choose a Vehicale Type",
+                   choices = sort(accidents.load$vehicle_type_code1),
+                   multiple = TRUE,
+                   selectize = TRUE,
+                   selected = unique(accidents.load$vehicle_type_code1)[1]
+                   )
+    })
+uiOutput("CarType")
+
+
+AccidInput <- reactive({
+    url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=vehicle_type_code1 in('",noquote(paste(input$carType1, collapse = "', '")),"')")
+    print(url)
+    print(noquote(paste(input$carType1, collapse = "', '")))
+    accidents.server1 <- ckanSQL(url = url)
+    accidents.server1$date <- as.Date(accidents.server1$date)
+  return(accidents.server1)
   })
 
-selectInput("worldSelect",
-               "Homeworld:",
-               choices = sort(unique(starwars.load$homeworld)),
-               multiple = TRUE,
-               selectize = TRUE,
-               selected = c("Naboo", "Tatooine"))
-   # Birth Selection
-   sliderInput("birthSelect",
-               "Birth Year:",
-               min = min(starwars.load$birth_year, na.rm = T),
-               max = max(starwars.load$birth_year, na.rm = T),
-               value = c(min(starwars.load$birth_year, na.rm = T), max(starwars.load$birth_year, na.rm = T)),
-               step = 1)
+output$dateRange <- renderUI({
+    dateRangeInput(inputId = "dateRange1",
+                   label = "Pick a Date Range",
+                   start = min(AccidInput()$date, na.rm = TRUE), 
+                   end = max(AccidInput()$date, na.rm = TRUE),
+                   min = min(AccidInput()$date, na.rm = TRUE),
+                   max = max(AccidInput()$date, na.rm = TRUE)
+                   )
+    })
+uiOutput("dateRange")
+
+
+
+
+
 ```
 
 
-```{r}
+```{r include=FALSE}
  swInput <- reactive({
     # Race Filter
     if (length(input$SelectedRace) > 0 ) {
@@ -111,7 +121,7 @@ Column {data-width=650}
 ```{r}
 
 
-addHeatmap(lng = ~X, lat = ~Y, radius = 8)
+
 
 
 ```
@@ -121,20 +131,27 @@ Column {data-width=350}
 
 ### Chart B
 
-```{r}
+```{rinclude=FALSE}
 value box, nunber of poeple killed to date
 crashes aggregated by hour
 
 
 ```
 
-### Chart C
+Map
+=====================================
 
-```{r}
-leaflet()%>% 
+Row 
+-------------------------------------
+
+
+```{r }
+output$mymap <- renderLeaflet({
+  leaflet()%>% 
   setView(-74.4493175, 29.356908, zoom = 4) %>% #set the view of the map
-  addCircles(data = test1, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), weight = 1, color ='#da0feb')#added the circles over large
-
- 
+ # addCircles(data = test1, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), weight = 1, color ='#da0feb') %>% #added the circles over large
+addHeatmap(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), radius = 8)
+  })
+leafletOutput("mymap")
 ```
 

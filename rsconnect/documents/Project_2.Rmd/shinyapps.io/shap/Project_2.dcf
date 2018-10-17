@@ -1,0 +1,12 @@
+name: Project_2
+title: Project_2
+username:
+account: shap
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 518454
+bundleId: 1646885
+url: https://shap.shinyapps.io/Project_2/
+when: 1539746821.48526
+asMultiple: FALSE
+asStatic: FALSE
