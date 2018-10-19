@@ -3,7 +3,7 @@ title: "Project 2"
 runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    orientation: row
     vertical_layout: fill
 ---
 
@@ -136,31 +136,6 @@ uiOutput("dateRange")
   })
 ```
 
-Column {data-width=650}
------------------------------------------------------------------------
-
-### Chart A
-
-```{r}
-
-
-
-
-
-```
-
-Column {data-width=350}
------------------------------------------------------------------------
-
-### Chart B
-
-```{rinclude=FALSE}
-value box, nunber of poeple killed to date
-crashes aggregated by hour
-
-
-```
-
 Map
 =====================================
 
@@ -176,5 +151,11 @@ output$mymap <- renderLeaflet({
 addHeatmap(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), radius = 8)
   })
 leafletOutput("mymap")
+```
+
+Row 
+-------------------------------------
+```{r}
+
 ```
 
