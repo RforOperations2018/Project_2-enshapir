@@ -7,8 +7,6 @@ output:
     vertical_layout: fill
 ---
 
-Sidebar {.sidebar}
-=====================================
 
 ```{r setup, include=FALSE}
 library(shiny)
@@ -31,10 +29,6 @@ library(leaflet.extras)
 # install.packages(c("shiny", "flexdashboard", "tidyverse", "jsonlite", "plotly", "DT", "shinythemes", "httr", "htmltools", "sf", "rgdal", "leaflet", "leaflet.extras"), dependencies = TRUE)
 
 
-
-```
-
-```{r include=FALSE}
 #API Documentation: https://dev.socrata.com/foundry/data.cityofnewyork.us/qiz3-axqb
 
 #Defining API functions from class
@@ -85,6 +79,8 @@ accidents.load$vehicle_type_code1 <- tolower(accidents.load$vehicle_type_code1)
 
 ```
 
+Sidebar {.sidebar}
+=====================================
 
 ```{r}
     output$CarType <- renderUI({
@@ -100,10 +96,10 @@ uiOutput("CarType")
 
 
 AccidInput <- reactive({
-    url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=lower(contributing_factor_vehicle_1) in('",noquote(paste(input$factorType1, collapse = "', '")),"')")
-    print(url)
-    print(noquote(paste(input$factorType1, collapse = "', '")))
-    accidents.server1 <- ckanGeoSQL(url = url)
+    #url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=lower(contributing_factor_vehicle_1) in('",noquote(paste(input$factorType1, collapse = "', '")),"')")
+    #print(url)
+    #print(noquote(paste(input$factorType1, collapse = "', '")))
+    accidents.server1 <- accidents.load #ckanGeoSQL(url = url)
     accidents.server1$date <- as.Date(accidents.server1$date)
   return(accidents.server1)
   })
@@ -121,7 +117,16 @@ uiOutput("dateRange")
 
 
 
+## Download Button
+renderUI({downloadButton('downloadFile','Download Raw Data')})
 
+output$downloadFile <- downloadHandler(filename = function() {
+     paste("Accident_Data-", Sys.Date(), ".csv", sep="")
+   },
+     content = function(file) {
+     write.csv(subset(AccidInput()@data, select = c(date, time, borough, latitude, longitude,contributing_factor_vehicle_1, number_of_motorist_injured, number_of_cyclist_killed, number_of_pedestrians_killed, number_of_motorist_killed)), file)
+   }
+)
 
 ```
 
@@ -170,6 +175,45 @@ Row
   })
 
 plotlyOutput("accidHours")
+
+```
+
+
+Row 
+-------------------------------------
+```{r}
+#A plot of the number of critical violations per inspection date
+  output$accidBoro <- renderPlotly({
+    data3 <-  AccidInput()@data
+    data3 <- data3 %>% count(borough)
+    ggplotly(
+      ggplot(data = data3, mapping = aes(x=borough, y=n))+
+         geom_bar(stat="identity") +
+        labs(x="Time of Day (24 hours)", y="Number of Injuries"))
+  })
+
+plotlyOutput("accidBoro")
+
+```
+
+Raw Data
+=====================================
+
+Row 
+-------------------------------------
+
+
+```{r }
+  #Output the Data Table
+  output$table <- DT::renderDataTable({
+    AccidentData <- subset(AccidInput()@data, select = c(date, time, borough, latitude, longitude,contributing_factor_vehicle_1, number_of_motorist_injured, number_of_cyclist_killed, number_of_pedestrians_killed, number_of_motorist_killed))
+
+  })
+  
+
+dataTableOutput("table")
+  
+
 
 ```
 
