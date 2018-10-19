@@ -26,13 +26,9 @@ library(leaflet)
 library(leaflet.extras)
 
 
-# #to install pacakgs while working on school computers
-# install.packages(c("shiny", "flexdashboard", "tidyverse", "jsonlite", "plotly", "DT", "shinythemes", "httr", "htmltools", "sf", "rgdal", "leaflet", "leaflet.extras"), dependencies = TRUE)
-
-
 #API Documentation: https://dev.socrata.com/foundry/data.cityofnewyork.us/qiz3-axqb
 
-#Defining API functions from class
+#Function to bring in GeoJson
 ckanGeoSQL <- function(url) {
   # Make the Request
   r <- RETRY("GET", URLencode(url))
@@ -44,6 +40,7 @@ ckanGeoSQL <- function(url) {
   readOGR(json)
 }
 
+#Function to bring in Json as text document and not SP file
 ckanSQL <- function(url) {
   # Make the Request
   r <- RETRY("GET", URLencode(url))
@@ -56,7 +53,7 @@ ckanSQL <- function(url) {
 }
 
 
- # Unique values for Resource Field
+ # fucntion to get unquie values from a number or text field
  ckanUniques <- function(type, field) {
    if (type == "text") {
       url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$select=lower(",field,")&$group=",field,"&$having=",field," IS NOT NULL")
@@ -68,20 +65,6 @@ ckanSQL <- function(url) {
    c(ckanSQL(URLencode(url)))
  }
  
-# test1 <- ckanUniques(field = "vehicle_type_code1")
-# 
-# test2 <- ckanUniques(field = "contributing_factor_vehicle_1")
-
-
-
-
-# url <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$limit=10000"
-# accidents.load <- ckanGeoSQL(url = url)
-# accidents.load$date <- as.Date(accidents.load$date)
-# accidents.load$vehicle_type_code1 <- tolower(accidents.load$vehicle_type_code1)
-# 
-# # url2 <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$select=lower(vehicle_type_code1)&$group=vehicle_type_code1&$having=vehicle_type_code1= IS NOT NULL"
-# # accidents.uniq <- ckanSQL(url = url2)
 
 ```
 
@@ -89,7 +72,9 @@ Sidebar {.sidebar}
 =====================================
 
 ```{r}
-    output$CarType <- renderUI({
+   
+#intial UI for choosing contirbuting factor
+ output$CarType <- renderUI({
     selectInput(inputId = "factorType1",
                    label = "Step 1: Choose a Contributing Factor",
                    choices = ckanUniques(type = "text", field = "contributing_factor_vehicle_1")$features.properties$lower_contributing_factor_vehicle_1 ,
@@ -100,7 +85,7 @@ Sidebar {.sidebar}
     })
 uiOutput("CarType")
 
-
+#PUlling the intial dataset
 AccidInput.Init <- reactive({
    url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=lower(contributing_factor_vehicle_1) in('",noquote(paste(input$factorType1, collapse = "', '")),"')")
     print(url)
@@ -112,7 +97,7 @@ AccidInput.Init <- reactive({
    return(accidents.serverA)
   })
 
-
+#updates to the dataset from the other 3 inputs, doing it locally so it from already filed pulled down in piror API so it runs faster
 AccidInput <- reactive({
     accidents.server1 <- AccidInput.Init()
      if (!is.null(input$dateRange1)) {
@@ -135,6 +120,7 @@ AccidInput <- reactive({
   return(accidents.server1)
   })
 
+# input for dates
 output$dateRange <- renderUI({
     dateRangeInput(inputId = "dateRange1",
                    label = "Step 2: Pick a Date Range",
@@ -146,6 +132,7 @@ output$dateRange <- renderUI({
     })
 uiOutput("dateRange")
 
+#input for injured motorist
 output$numInjurM <- renderUI({
         sliderInput(inputId = "numInjurM1", 
                     label = "Step 3: Choose the Maximum Number of Injured Drivers",
@@ -155,6 +142,7 @@ output$numInjurM <- renderUI({
     })
 uiOutput("numInjurM")
 
+#input for injured pedestrian
 output$numInjurP <- renderUI({
         sliderInput(inputId = "numInjurP1", 
                     label = "Step 4: Choose the Maximum Number of Injured Pedestrians",
@@ -181,22 +169,13 @@ output$downloadFile <- downloadHandler(filename = function() {
 ```
 
 
-```{r include=FALSE}
- swInput <- reactive({
-    # Race Filter
-    if (length(input$SelectedRace) > 0 ) {
-      RaceAgeGender.server <- subset(RaceAgeGender, Race %in% input$SelectedRace)
-    }
-    
-    return( RaceAgeGender.server)
-  })
-```
-
 Map
 =====================================
 
 
 ```{r }
+
+#leaflet map plotting for heatmap and groupped points
 output$mymap <- renderLeaflet({
 leaflet()%>% 
   setView(-73.87300,  40.72, zoom = 10) %>%
@@ -215,7 +194,7 @@ Accident Charts
 Row 
 -------------------------------------
 ```{r}
-#A plot of the number of critical violations per inspection date
+#A plot of the number of injured motorists per hour of the day
   output$accidHours <- renderPlotly({
     data1 <- AccidInput()@data
     data1$time <- hms(as.character(data1$time))
@@ -235,7 +214,7 @@ plotlyOutput("accidHours")
 Row 
 -------------------------------------
 ```{r}
-#A plot of the number of critical violations per inspection date
+#A plot of the number of accidents by NYC borough
   output$accidBoro <- renderPlotly({
     data3 <-  AccidInput()@data
     data3 <- data3 %>% count(borough)
