@@ -101,6 +101,8 @@ AccidInput <- reactive({
     #print(noquote(paste(input$factorType1, collapse = "', '")))
     accidents.server1 <- accidents.load #ckanGeoSQL(url = url)
     accidents.server1$date <- as.Date(accidents.server1$date)
+    accidents.server1$number_of_motorist_injured <- as.numeric(as.character(accidents.server1$number_of_motorist_injured))
+    accidents.server1$number_of_pedestrians_injured <- as.numeric(as.character(accidents.server1$number_of_pedestrians_injured))
   return(accidents.server1)
   })
 
@@ -114,6 +116,26 @@ output$dateRange <- renderUI({
                    )
     })
 uiOutput("dateRange")
+
+output$numInjurM <- renderUI({
+        sliderInput(inputId = "numInjurM1", 
+                    label = "Step 3: Choose the Maximum Number of Injured Drivers",
+                    min = min(AccidInput()$number_of_motorist_injured, na.rm = TRUE), 
+                    max = max(AccidInput()$number_of_motorist_injured, na.rm = TRUE),
+                    value = max(AccidInput()$number_of_motorist_injured, na.rm = TRUE))
+    })
+uiOutput("numInjurM")
+
+output$numInjurP <- renderUI({
+        sliderInput(inputId = "numInjurP1", 
+                    label = "Step 3: Choose the Maximum Number of Injured Pedestrians",
+                    min = min(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE), 
+                    max = max(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE),
+                    value = max(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE))
+    })
+uiOutput("numInjurP")
+
+
 
 
 
