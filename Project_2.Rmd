@@ -72,6 +72,8 @@ test1 <- ckanUniques(field = "vehicle_type_code1")
 test2 <- ckanUniques(field = "contributing_factor_vehicle_1")
 
 
+
+
 url <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$limit=10000"
 accidents.load <- ckanGeoSQL(url = url)
 accidents.load$date <- as.Date(accidents.load$date)
@@ -85,21 +87,21 @@ accidents.load$vehicle_type_code1 <- tolower(accidents.load$vehicle_type_code1)
 
 ```{r}
 output$CarType <- renderUI({
-    selectInput(inputId = "factorType1",
-                   label = "Step 1: Choose a Contributing Factor",
-                   choices = ckanUniques(field = "contributing_factor_vehicle_1")$features.properties$lower_contributing_factor_vehicle_1 ,
+    selectInput(inputId = "carType1",
+                   label = "1. Choose a Vehicale Type",
+                   choices = test2$features.properties$lower_contributing_factor_vehicle_1 ,
                    multiple = TRUE,
                    selectize = TRUE,
-                   selected = ckanUniques(field = "contributing_factor_vehicle_1")$features.properties$lower_contributing_factor_vehicle_1[1]
+                   selected = test2$features.properties$lower_contributing_factor_vehicle_1[1]
                    )
     })
 uiOutput("CarType")
 
 
 AccidInput <- reactive({
-    url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=lower(contributing_factor_vehicle_1) in('",noquote(paste(input$factorType1, collapse = "', '")),"')")
+    url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=vehicle_type_code1 in('",noquote(paste(input$carType1, collapse = "', '")),"')")
     print(url)
-    print(noquote(paste(input$factorType1, collapse = "', '")))
+    print(noquote(paste(input$carType1, collapse = "', '")))
     accidents.server1 <- ckanGeoSQL(url = url)
     accidents.server1$date <- as.Date(accidents.server1$date)
   return(accidents.server1)
@@ -107,7 +109,7 @@ AccidInput <- reactive({
 
 output$dateRange <- renderUI({
     dateRangeInput(inputId = "dateRange1",
-                   label = "Step 2: Pick a Date Range",
+                   label = "Pick a Date Range",
                    start = min(AccidInput()$date, na.rm = TRUE), 
                    end = max(AccidInput()$date, na.rm = TRUE),
                    min = min(AccidInput()$date, na.rm = TRUE),
