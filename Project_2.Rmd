@@ -128,7 +128,7 @@ uiOutput("numInjurM")
 
 output$numInjurP <- renderUI({
         sliderInput(inputId = "numInjurP1", 
-                    label = "Step 3: Choose the Maximum Number of Injured Pedestrians",
+                    label = "Step 4: Choose the Maximum Number of Injured Pedestrians",
                     min = min(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE), 
                     max = max(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE),
                     value = max(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE))
@@ -173,10 +173,13 @@ Row
 
 ```{r }
 output$mymap <- renderLeaflet({
-  leaflet()%>% 
-  setView(-74.4493175, 29.356908, zoom = 4) %>% #set the view of the map
- # addCircles(data = test1, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), weight = 1, color ='#da0feb') %>% #added the circles over large
-addHeatmap(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), radius = 8)
+leaflet()%>% 
+  setView(-73.87300,  40.72, zoom = 10) %>%
+   addProviderTiles("OpenStreetMap.HOT", options = providerTileOptions(noWrap = TRUE)) %>% 
+  addMarkers(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), clusterOptions = markerClusterOptions(), popup = ~contributing_factor_vehicle_1, label = ~contributing_factor_vehicle_1,  group = "Accidents") %>% 
+addHeatmap(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), radius = 8, group = "Heat Map") %>% 
+  addLayersControl( overlayGroups = c("Accidents",  "Heat Map"),
+    options = layersControlOptions(collapsed = FALSE))
   })
 leafletOutput("mymap")
 ```
