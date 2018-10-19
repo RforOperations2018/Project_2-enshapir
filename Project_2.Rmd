@@ -57,26 +57,31 @@ ckanSQL <- function(url) {
 
 
  # Unique values for Resource Field
- ckanUniques <- function(id, field) {
-   url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$select=lower(",field,")&$group=",field,"&$having=",field," IS NOT NULL")
+ ckanUniques <- function(type, field) {
+   if (type == "text") {
+      url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$select=lower(",field,")&$group=",field,"&$having=",field," IS NOT NULL")
+   }
+   if (type == "num") {
+      url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$select=",field,"&$group=",field,"&$having=",field," IS NOT NULL")
+   }
    print(url)
    c(ckanSQL(URLencode(url)))
  }
  
-test1 <- ckanUniques(field = "vehicle_type_code1")
-
-test2 <- ckanUniques(field = "contributing_factor_vehicle_1")
-
-
+# test1 <- ckanUniques(field = "vehicle_type_code1")
+# 
+# test2 <- ckanUniques(field = "contributing_factor_vehicle_1")
 
 
-url <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$limit=10000"
-accidents.load <- ckanGeoSQL(url = url)
-accidents.load$date <- as.Date(accidents.load$date)
-accidents.load$vehicle_type_code1 <- tolower(accidents.load$vehicle_type_code1)
 
-# url2 <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$select=lower(vehicle_type_code1)&$group=vehicle_type_code1&$having=vehicle_type_code1= IS NOT NULL"
-# accidents.uniq <- ckanSQL(url = url2)
+
+# url <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$limit=10000"
+# accidents.load <- ckanGeoSQL(url = url)
+# accidents.load$date <- as.Date(accidents.load$date)
+# accidents.load$vehicle_type_code1 <- tolower(accidents.load$vehicle_type_code1)
+# 
+# # url2 <- "https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$select=lower(vehicle_type_code1)&$group=vehicle_type_code1&$having=vehicle_type_code1= IS NOT NULL"
+# # accidents.uniq <- ckanSQL(url = url2)
 
 ```
 
@@ -87,23 +92,46 @@ Sidebar {.sidebar}
     output$CarType <- renderUI({
     selectInput(inputId = "factorType1",
                    label = "Step 1: Choose a Contributing Factor",
-                   choices = ckanUniques(field = "contributing_factor_vehicle_1")$features.properties$lower_contributing_factor_vehicle_1 ,
+                   choices = ckanUniques(type = "text", field = "contributing_factor_vehicle_1")$features.properties$lower_contributing_factor_vehicle_1 ,
                    multiple = TRUE,
                    selectize = TRUE,
-                   selected = ckanUniques(field = "contributing_factor_vehicle_1")$features.properties$lower_contributing_factor_vehicle_1[1]
+                   selected = ckanUniques(type = "text", field = "contributing_factor_vehicle_1")$features.properties$lower_contributing_factor_vehicle_1[1]
                    )
     })
 uiOutput("CarType")
 
 
+AccidInput.Init <- reactive({
+   url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=lower(contributing_factor_vehicle_1) in('",noquote(paste(input$factorType1, collapse = "', '")),"')")
+    print(url)
+    print(noquote(paste(input$factorType1, collapse = "', '")))
+    accidents.serverA <- ckanGeoSQL(url = url)
+    accidents.serverA$date <- as.Date(accidents.serverA$date)
+    accidents.serverA$number_of_motorist_injured <- as.numeric(as.character(accidents.serverA$number_of_motorist_injured))
+    accidents.serverA$number_of_pedestrians_injured <- as.numeric(as.character(accidents.serverA$number_of_pedestrians_injured))
+   return(accidents.serverA)
+  })
+
+
 AccidInput <- reactive({
-    #url <- paste0("https://data.cityofnewyork.us/resource/qiz3-axqb.geojson?$where=lower(contributing_factor_vehicle_1) in('",noquote(paste(input$factorType1, collapse = "', '")),"')")
-    #print(url)
-    #print(noquote(paste(input$factorType1, collapse = "', '")))
-    accidents.server1 <- accidents.load #ckanGeoSQL(url = url)
-    accidents.server1$date <- as.Date(accidents.server1$date)
-    accidents.server1$number_of_motorist_injured <- as.numeric(as.character(accidents.server1$number_of_motorist_injured))
-    accidents.server1$number_of_pedestrians_injured <- as.numeric(as.character(accidents.server1$number_of_pedestrians_injured))
+    accidents.server1 <- AccidInput.Init()
+     if (!is.null(input$dateRange1)) {
+      accidents.server1@data <- accidents.server1@data %>% 
+        filter(date >= input$dateRange1[1] & date <= input$dateRange1[2])
+      print("filter date")
+    }
+    if (!is.null(input$numInjurM1)) {
+      accidents.server1@data <- accidents.server1@data %>% 
+        filter(number_of_motorist_injured <= input$numInjurM1) 
+      print("filterm1")
+    }
+    if (!is.null(input$numInjurP1)) {
+      accidents.server1@data <- accidents.server1@data %>% 
+        filter(number_of_pedestrians_injured <= input$numInjurP1) 
+      print("filterp1")
+    }
+    
+
   return(accidents.server1)
   })
 
@@ -112,8 +140,8 @@ output$dateRange <- renderUI({
                    label = "Step 2: Pick a Date Range",
                    start = min(AccidInput()$date, na.rm = TRUE), 
                    end = max(AccidInput()$date, na.rm = TRUE),
-                   min = min(AccidInput()$date, na.rm = TRUE),
-                   max = max(AccidInput()$date, na.rm = TRUE)
+                   min = min(AccidInput.Init()$date, na.rm = TRUE),
+                   max = max(AccidInput.Init()$date, na.rm = TRUE)
                    )
     })
 uiOutput("dateRange")
@@ -121,8 +149,8 @@ uiOutput("dateRange")
 output$numInjurM <- renderUI({
         sliderInput(inputId = "numInjurM1", 
                     label = "Step 3: Choose the Maximum Number of Injured Drivers",
-                    min = min(AccidInput()$number_of_motorist_injured, na.rm = TRUE), 
-                    max = max(AccidInput()$number_of_motorist_injured, na.rm = TRUE),
+                    min = min(AccidInput.Init()$number_of_motorist_injured, na.rm = TRUE), 
+                    max = max(AccidInput.Init()$number_of_motorist_injured, na.rm = TRUE),
                     value = max(AccidInput()$number_of_motorist_injured, na.rm = TRUE))
     })
 uiOutput("numInjurM")
@@ -130,12 +158,11 @@ uiOutput("numInjurM")
 output$numInjurP <- renderUI({
         sliderInput(inputId = "numInjurP1", 
                     label = "Step 4: Choose the Maximum Number of Injured Pedestrians",
-                    min = min(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE), 
-                    max = max(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE),
+                    min = min(AccidInput.Init()$number_of_pedestrians_injured, na.rm = TRUE), 
+                    max = max(AccidInput.Init()$number_of_pedestrians_injured, na.rm = TRUE),
                     value = max(AccidInput()$number_of_pedestrians_injured, na.rm = TRUE))
     })
 uiOutput("numInjurP")
-
 
 
 
@@ -174,8 +201,8 @@ output$mymap <- renderLeaflet({
 leaflet()%>% 
   setView(-73.87300,  40.72, zoom = 10) %>%
    addProviderTiles("OpenStreetMap.HOT", options = providerTileOptions(noWrap = TRUE)) %>% 
-  addMarkers(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), clusterOptions = markerClusterOptions(), popup = ~contributing_factor_vehicle_1, label = ~contributing_factor_vehicle_1,  group = "Accidents") %>% 
-addHeatmap(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), radius = 8, group = "Heat Map") %>% 
+  addMarkers(data = AccidInput(), lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), clusterOptions = markerClusterOptions(), popup = ~contributing_factor_vehicle_1, label = ~contributing_factor_vehicle_1,  group = "Accidents") %>% 
+addHeatmap(data = AccidInput(), lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), radius = 8, group = "Heat Map") %>% 
   addLayersControl( overlayGroups = c("Accidents",  "Heat Map"),
     options = layersControlOptions(collapsed = FALSE))
   })
