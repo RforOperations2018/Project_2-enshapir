@@ -1,10 +1,11 @@
 ---
-title: "Project 2"
+title: "New York City Vehicle Accidents"
 runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
     orientation: row
     vertical_layout: fill
+
 ---
 
 
@@ -167,9 +168,6 @@ output$downloadFile <- downloadHandler(filename = function() {
 Map
 =====================================
 
-Row 
--------------------------------------
-
 
 ```{r }
 output$mymap <- renderLeaflet({
@@ -183,6 +181,9 @@ addHeatmap(data = accidents.load, lng = ~as.numeric(as.character(longitude)), la
   })
 leafletOutput("mymap")
 ```
+
+Accident Charts
+=====================================
 
 Row 
 -------------------------------------
@@ -214,7 +215,7 @@ Row
     ggplotly(
       ggplot(data = data3, mapping = aes(x=borough, y=n))+
          geom_bar(stat="identity") +
-        labs(x="Time of Day (24 hours)", y="Number of Injuries"))
+        labs(x="New York City Boroughs", y="Number of Accidents"))
   })
 
 plotlyOutput("accidBoro")
