@@ -3,7 +3,7 @@ title: "Project 2"
 runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
-    orientation: row
+    orientation: columns
     vertical_layout: fill
 ---
 
@@ -31,6 +31,9 @@ library(leaflet.extras)
 
 
 
+```
+
+```{r include=FALSE}
 #API Documentation: https://dev.socrata.com/foundry/data.cityofnewyork.us/qiz3-axqb
 
 #Defining API functions from class
@@ -122,6 +125,42 @@ uiOutput("dateRange")
 ```
 
 
+```{r include=FALSE}
+ swInput <- reactive({
+    # Race Filter
+    if (length(input$SelectedRace) > 0 ) {
+      RaceAgeGender.server <- subset(RaceAgeGender, Race %in% input$SelectedRace)
+    }
+    
+    return( RaceAgeGender.server)
+  })
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+
+
+
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{rinclude=FALSE}
+value box, nunber of poeple killed to date
+crashes aggregated by hour
+
+
+```
+
 Map
 =====================================
 
@@ -137,24 +176,5 @@ output$mymap <- renderLeaflet({
 addHeatmap(data = accidents.load, lng = ~as.numeric(as.character(longitude)), lat = ~as.numeric(as.character(latitude)), radius = 8)
   })
 leafletOutput("mymap")
-```
-
-
-Row 
--------------------------------------
-```{r}
-#A plot of the number of critical violations per inspection date
-  output$accidHours <- renderPlotly({
-    data1 <- AccidInput()@data
-    data1$time <- hms(as.character(data1$time))
-    data1$hour <- data1$time@hour
-    data2 <- data1 %>% group_by(hour) %>% summarise(injured = sum(as.numeric(as.character(number_of_motorist_injured))))
-    ggplotly(
-      ggplot(data = data2, mapping = aes(x=hour, y=injured))+
-        geom_line() +
-        labs(x="Time of Day (24 hours)", y="Number of Injuries"))
-  })
-
-plotlyOutput("accidHours")
 ```
 
