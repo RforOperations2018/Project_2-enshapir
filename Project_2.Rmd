@@ -84,6 +84,7 @@ Sidebar {.sidebar}
                    )
     })
 uiOutput("CarType")
+# For future reference, in Rmd files you can just put the selectInput right here and it will show up, no need to save the output or something.
 
 #PUlling the intial dataset
 AccidInput.Init <- reactive({
@@ -97,7 +98,8 @@ AccidInput.Init <- reactive({
    return(accidents.serverA)
   })
 
-#updates to the dataset from the other 3 inputs, doing it locally so it from already filed pulled down in piror API so it runs faster
+#updates to the dataset from the other 3 inputs, doing it locally so it from already filed pulled down in piror API so it runs faster 
+# I do stuff this way often as well, but putting the date range in your API calls will pretty much always result in getting the app to load faster.
 AccidInput <- reactive({
     accidents.server1 <- AccidInput.Init()
      if (!is.null(input$dateRange1)) {
@@ -193,6 +195,7 @@ Accident Charts
 
 Row 
 -------------------------------------
+
 ```{r}
 #A plot of the number of injured motorists per hour of the day
   output$accidHours <- renderPlotly({
@@ -234,8 +237,8 @@ Raw Data
 Row 
 -------------------------------------
 
-
 ```{r }
+# So this is the only thing I really have a problem with. The DT package as a horizontal scroll feature that would have made this a bit better, and while the charts not being inside boxes is fine, I think having the "###" before you created this row would have helped a bit. Since the gray background for the top of the table looks kind of strange.
   #Output the Data Table
   output$table <- DT::renderDataTable({
     AccidentData <- subset(AccidInput()@data, select = c(date, time, borough, latitude, longitude,contributing_factor_vehicle_1, number_of_motorist_injured, number_of_cyclist_killed, number_of_pedestrians_killed, number_of_motorist_killed))
